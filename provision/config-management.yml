@@ -1,0 +1,44 @@
+---
+- name: 構成管理サーバの立ち上げ(git,gitbucket,jenkins,artifactory)
+# artifactoryのAPサーバにgitbucketを同居させる
+  hosts: all
+  become: true
+  remote_user: root
+  tasks:
+  - name: add a new user
+    user: name=artifactory password=artifactory state=present
+  - name: directory generate
+    file: path=/var/opt/jfrog/artifactory state=directory
+  - file: src=/vagrant/artifactory/data dest=/var/opt/jfrog/artifactory/data state=link
+  - name: install open-jdk
+    yum: name=java-1.8.0-openjdk-headless.x86_64 state=present
+  - name: install git
+    yum: name=git state=present
+  - name: get jenkins repository
+    get_url: url=http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo dest=/etc/yum.repos.d/jenkins.repo
+  - name: add jenkins repository
+    rpm_key: key=http://pkg.jenkins-ci.org/redhat-stable/jenkins-ci.org.key
+  - name: install jenkins
+    yum: name={{ item }} state=present
+    with_items:
+      - jenkins
+      - fontconfig
+      - dejavu-sans-fonts
+  - name: get artifactory repository
+    get_url: url=https://bintray.com/jfrog/artifactory-rpms/rpm dest=/etc/yum.repos.d/bintray-jfrog-artifactory-rpms.repo
+  - name: install artifactory
+    yum: name=jfrog-artifactory-oss state=present
+  - copy: src=/vagrant/provision/artifactory-gitbucket/artifactory.default dest=/etc/opt/jfrog/artifactory/default
+  - name: change JENKINS_HOME
+    replace: >-
+      dest='/etc/sysconfig/jenkins'
+      regexp='JENKINS_HOME="/var/lib/jenkins"'
+      replace='JENKINS_HOME="/vagrant/jenkins"'  
+  - name: install gitbucket
+    get_url: url=https://github.com/gitbucket/gitbucket/releases/download/4.10/gitbucket.war dest=/opt/jfrog/artifactory/tomcat/webapps
+# artifactoryを開始すると、gitbucketもデプロイされる
+  - name: setting chkconfig
+    service: name={{ item }} state=stopped enabled=no
+    with_items:
+      - jenkins
+      - artifactory  

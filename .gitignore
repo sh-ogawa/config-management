@@ -1,0 +1,9 @@
+.vagrant
+/git-data
+/provision/gitbucket
+/provision/*.retry
+/jenkins/*
+!/jenkins/directory.info
+/artifactory/*
+!/artifactory/directory.info
+/exp
