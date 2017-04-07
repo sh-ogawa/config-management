@@ -4,6 +4,5 @@
 /provision/*.retry
 /jenkins/*
 !/jenkins/directory.info
-/artifactory/*
-!/artifactory/directory.info
-/exp
+/artifactory/data/*
+!/artifactory/data/directory.info
